@@ -366,7 +366,7 @@ def lattice_sequence_with_softmax(label, prediction, loglikelihood, lattice, sym
     return lattice_sequence_with_softmax(label, prediction, loglikelihood, lattice, symListPath, phonePath, stateListPath, transProbPath, hSmoothingWeight, frameDropThresh, doReferenceAlign, seqGammarUsesMBR, seqGammarAMF, seqGammarLMF, seqGammarBMMIFactor, seqGammarWordPen, name)
 
 @typemap
-def hierarchical_softmax_layer(input_var, num_output_classes, target_class, target_output_in_class, batch_size, w1, b1, w2s, b2s):
+def hierarchical_softmax_layer(input_var, num_output_classes, target_class, target_output_in_class, w1, b1, w2s, b2s):
     '''
     A two layers hierarchical softmax function:
 
@@ -402,7 +402,6 @@ def hierarchical_softmax_layer(input_var, num_output_classes, target_class, targ
         num_output_classes: int
         target_class: class:`~cntk.ops.functions.Function` that outputs a tensor with batch axis
         target_output_in_class: class:`~cntk.ops.functions.Function` that outputs a tensor with batch axis
-        batch_size: int
         w1: C.parameter
         b1: C.parameter
         w2s: C.parameter
@@ -447,8 +446,8 @@ def hierarchical_softmax_layer(input_var, num_output_classes, target_class, targ
         b2a = C.sequence.broadcast_as(b2a, input_var)
 
         probs_in_classa = C.softmax(b2a + times(input_var, w2a))
-        cia = C.constant(i, shape=[batch_size, 1])
-        cia = C.to_batch(cia)
+        cia = C.constant(i, shape=[1])
+        cia = C.reconcile_dynamic_axes(cia, class_probs)
         cia = C.one_hot(cia, n_outputs_per_class, False)
         cia = C.sequence.broadcast_as(cia, class_probs)
         class_proba = C.times_transpose(class_probs, cia)
@@ -460,7 +459,7 @@ def hierarchical_softmax_layer(input_var, num_output_classes, target_class, targ
     return output_prob, class_probs, all_probs
 
 @typemap
-def hierarchical_softmax_layer_for_sequence(input_var, num_output_classes, target_class, target_output_in_class, batch_size, w1, b1, w2s, b2s):
+def hierarchical_softmax_layer_for_sequence(input_var, num_output_classes, target_class, target_output_in_class, w1, b1, w2s, b2s):
     '''
     A two layers hierarchical softmax function with sequence axis input:
 
@@ -497,7 +496,6 @@ def hierarchical_softmax_layer_for_sequence(input_var, num_output_classes, targe
         num_output_classes: int
         target_class: class:`~cntk.ops.functions.Function` that outputs a tensor with sequence axis and batch axis
         target_output_in_class: class:`~cntk.ops.functions.Function` that outputs a tensor with sequence axis and batch axis
-        batch_size: int
         w1: C.parameter
         b1: C.parameter
         w2s: C.parameter
